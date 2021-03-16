@@ -12,6 +12,7 @@ import babel
 from models import (
     User,
     KeyWord,
+    Fuck,
     setup_db,
     db
 )
@@ -37,7 +38,7 @@ def create_app(test_config=None):
             print(E)
             abort(422)
     
-    @app.route('/user', methods=['GET'])
+    @app.route('/user/<int:userID>', methods=['GET'])
     def specificUser(userID):
         try:
             user = User.query.filter(User.id == userID).one_or_none()
@@ -88,7 +89,7 @@ def create_app(test_config=None):
 
             return jsonify({
                 'success':True,
-                'deleted':targetUser.id
+                'deleted':userID
             })
         except Exception as E:
             print(E)
@@ -105,13 +106,14 @@ def create_app(test_config=None):
             
             return jsonify({
                 'success':True,
-                'keywords':[keyword.format() for keyword in keywords]
+                'keywords':[keyword.format() for keyword in keywords],
+                'total_keywords':len(keywords)
             })
         except Exception as E:
             print(E)
             abort(422)
     
-    @app.route('/keywords', methods=['GET'])
+    @app.route('/keywords/<string:keywordID>', methods=['GET'])
     def specificKeyword(keywordID):
         try:
             keyword = KeyWord.query.filter(KeyWord.id == keywordID).one_or_none()
@@ -128,6 +130,119 @@ def create_app(test_config=None):
             print(E)
             abort(422)
         
+    @app.route('/keywords', methods=['POST'])
+    def postKeyword():
+        try:
+            body = request.get_json()
+
+            new_keyword = body.get('keyword', None)
+
+            newKeyword = KeyWord(keyword=new_keyword)
+            newKeyword.insert()
+
+            return jsonify({
+                'success':True,
+                'keyword':newKeyword.format(),
+                'created':newKeyword.id
+            })
+        except Exception as E:
+            print(E)
+            abort(422)
+
+    @app.route('/keywords/<string:keywordID', methods=['DELETE'])
+    def deleteKeyword(keywordID):
+        try:
+            keyword = KeyWord.query.filter(KeyWord.id == keywordID).one_or_none()
+
+            if keyword is None:
+                print(f'ERROR FINDING {keywordID}')
+                abort(404)
+            
+            keyword.delete()
+
+            return jsonify({
+                'success':True,
+                'deleted':keywordID
+            })
+        except Exception as E:
+            print(E)
+            abort(422)
+    
+    @app.route('/fuck', methods=['GET'])
+    def fuck():
+        try:
+            fuckList = Fuck.query.order_by(Fuck.id).all()
+
+            if fuckList is None:
+                print('ERROR empty Fuck database')
+                abort(404)
+            
+            return jsonify({
+                'success':True,
+                'fucks':[fuck.format() for fuck in fuckList],
+                'total_fucks':len(fuckList)
+            })
+        except Exception as E:
+            print(E)
+            abort(422)
+    
+    @app.route('/fuck/<int:fuckID>', methods=['GET'])
+    def specificFuck(fuckID):
+        try:
+            fuck = Fuck.query.filter(Fuck.id == fuckID).one_or_none()
+
+            if fuck is None:
+                print('Database could not give a Fuck')
+                abort(404)
+            
+            return jsonify({
+                'success':True,
+                'fuck':fuck.format()
+            })
+        except Exception as E:
+            print(E)
+            abort(422)
+    
+    @app.route('/fuck', methods=['POST'])
+    def postFuck():
+        try:
+            body = request.get_json()
+
+            new_userID = body.get('userID', None)
+            new_keyword = body.get('keyword', None)
+
+            fuck = Fuck(userID = new_userID,
+                        keyword = new_keyword)
+            fuck.insert()
+
+            return jsonify({
+                'success':True,
+                'fuck':fuck.format(),
+                'created':fuck.id
+            })
+        except Exception as E:
+            print(E)
+            abort(422)
+    
+    @app.route('/fuck/<int:fuckID>', methods=['DELETE'])
+    def deleteFuck(fuckID):
+        try:
+            fuck = Fuck.query.filter(Fuck.id == fuckID).one_or_none()
+
+            if fuck is None:
+                print('Database could not give a Fuck')
+                abort(404)
+            
+            fuck.delete()
+
+            return jsonify({
+                'success':True,
+                'deleted':fuckID
+            })
+        except Exception as E:
+            print(E)
+            abort(422)
+
     @app.errorhandler(422)
     def unprocessable(error):
         return jsonify({
