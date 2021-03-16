@@ -10,7 +10,8 @@ from sqlalchemy import (
     MetaData,
     DateTime,
     ForeignKey,
-    Float
+    Float,
+    relationship
 )
 import json
 from flask_sqlalchemy import SQLAlchemy
@@ -55,6 +56,7 @@ class User(db.Model):
     lName = Column(String(150), nullable=False)
     uName = Column(String(150), nullable=False)
     dateCreated = Column(DateTime(), nullable=False)
+    fuckID = relationship('Fuck', backref='Fuck', lazy=True)
 
     def __init__(self, fName, lName, uName):
         self.fName = fName
@@ -62,7 +64,7 @@ class User(db.Model):
         self.uName = uName
         self.dateCreated = datetime.now(timezone('UTC')).astimezone('US/Pacific')
 
-    def insert(self):
+    def insert(self):dateCreated = Column(DateTime(), nullable=False)
         try:
             db.session.add(self)
             db.session.commit()
@@ -99,6 +101,13 @@ class KeyWord(db.Model):
 
     id = Column(String, primary_key=True) #id counts as the title of the word as well as the primary key
     numFU = Column(Integer, nullable=False)
+    dateCreated = Column(DateTime(), nullable=False)
+    FuckID = relationship('Fuck', backref='Fuck', lazy=True)
+
+    def __init__(self, keyword, numFU):
+        self.id = keyword
+        self.dateCreated = datetime.now(timezone('UTC')).astimezone('US/Pacific')
+        self.numFU = 0
 
     def insert(self):
         try:
@@ -127,4 +136,47 @@ class KeyWord(db.Model):
         return{
             'id':self.id,
             'numFU':self.numFU
+        }
+
+class Fuck(db.Model):
+    __tablename__ = 'Fuck'
+
+    id = Column(String, primary_key=True)
+    dateCreated = Column(DateTime(), nullable=False)
+    userID = Column(Integer, ForeignKey('User.id'), nullable=False)
+    keyword = Column(String, ForeignKey('KeyWord.id'), nullable=False)
+
+    def __init__(self, userID, keyword):
+        self.userID = userID
+        self.keyword = keyword
+    
+    def insert(self):
+        try:
+            db.session.add(self)
+            db.session.commit()
+        except Exception as E:
+            print(E)
+            db.session.rollback()
+    
+    def update(self):
+        try:
+            db.session.commit()
+        except Exception as E:
+            print(E)
+            db.session.rollback()
+    
+    def delete(self):
+        try:
+            db.session.delete(self)
+            db.session.commit()
+        except Exception as E:
+            print(E)
+            db.session.rollback()
+    
+    def format(self):
+        return{
+            'id':self.id,
+            'dateCreated':self.dateCreated,
+            'userID':self.userID,
+            'keyword':self.keyword
         }
